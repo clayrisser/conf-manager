@@ -53,6 +53,10 @@ export default class ConfManager<Config = BaseConfig> {
   }
 
   get userConfig(): Partial<Config> {
+    return this.loadUserConfig();
+  }
+
+  loadUserConfig(): Partial<Config> {
     try {
       return cosmiconfigSync(this.name)
         ?.search(this.rootPath)

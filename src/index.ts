@@ -32,7 +32,7 @@ export default class ConfManager<Config = BaseConfig> {
   ) {
     this.options = {
       multithread: false,
-      ...options
+      ...options,
     };
     if (options.loadHomeConfig) this.loadHomeConfig = options.loadHomeConfig;
     if (options.loadProjectConfig) {
@@ -41,7 +41,7 @@ export default class ConfManager<Config = BaseConfig> {
     this._config = this.loadConfig();
     if (this.options.multithread) {
       this.multithreadConfig = new MultithreadConfig({
-        name: this.options.name
+        name: this.options.name,
       });
       this.multithreadConfig.startSync();
       this.multithreadConfig?.setConfigSync<Config>(this._config);

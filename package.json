@@ -1,6 +1,6 @@
 {
   "name": "conf-manager",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "load and consume configuration",
   "keywords": [
     "conf-manager",

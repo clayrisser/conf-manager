@@ -4,9 +4,12 @@ import mergeConfiguration from 'merge-configuration';
 import path from 'path';
 import pkgDir from 'pkg-dir';
 import { cosmiconfigSync } from 'cosmiconfig';
+import { homedir } from 'os';
 import { BaseConfig, Pkg } from './types';
 
-export interface Options {
+export interface Options<Config = BaseConfig> {
+  loadHomeConfig?: () => Partial<Config>;
+  loadProjectConfig?: () => Partial<Config>;
   multithread: boolean;
   name?: string;
 }
@@ -18,12 +21,12 @@ export default class ConfManager<Config = BaseConfig> {
 
   multithreadConfig?: MultithreadConfig;
 
-  options: Options;
+  options: Options<Config>;
 
   rootPath = pkgDir.sync(process.cwd()) || process.cwd();
 
   constructor(
-    options: Partial<Options> = {},
+    options: Partial<Options<Config>> = {},
     public optionsConfig: Partial<Config> = {},
     public defaultConfig: Partial<Config> = {}
   ) {
@@ -31,6 +34,10 @@ export default class ConfManager<Config = BaseConfig> {
       multithread: false,
       ...options
     };
+    if (options.loadHomeConfig) this.loadHomeConfig = options.loadHomeConfig;
+    if (options.loadProjectConfig) {
+      this.loadProjectConfig = options.loadProjectConfig;
+    }
     this._config = this.loadConfig();
     if (this.options.multithread) {
       this.multithreadConfig = new MultithreadConfig({
@@ -52,15 +59,26 @@ export default class ConfManager<Config = BaseConfig> {
     return this._name;
   }
 
-  get userConfig(): Partial<Config> {
-    return this.loadUserConfig();
+  get homeConfig(): Partial<Config> {
+    return this.loadHomeConfig();
   }
 
-  loadUserConfig(): Partial<Config> {
+  get projectConfig(): Partial<Config> {
+    return this.loadProjectConfig();
+  }
+
+  loadHomeConfig(): Partial<Config> {
+    return this.loadFileConfig(homedir());
+  }
+
+  loadProjectConfig(): Partial<Config> {
+    return this.loadFileConfig(this.rootPath);
+  }
+
+  loadFileConfig(dirPath: string): Partial<Config> {
     try {
-      return cosmiconfigSync(this.name)
-        ?.search(this.rootPath)
-        ?.config({}) as Partial<Config>;
+      return (cosmiconfigSync(this.name)?.search(dirPath)?.config ||
+        {}) as Partial<Config>;
     } catch (err) {
       if (err.name !== 'YAMLException') throw err;
       return require(err.mark.name);
@@ -91,8 +109,11 @@ export default class ConfManager<Config = BaseConfig> {
     return mergeConfiguration<Config>(
       mergeConfiguration<Config>(
         mergeConfiguration<Config>(
-          this.defaultConfig as Config,
-          this.userConfig
+          mergeConfiguration<Config>(
+            this.defaultConfig as Config,
+            this.homeConfig
+          ),
+          this.projectConfig
         ),
         this.optionsConfig
       ),

@@ -4,6 +4,8 @@
 
 > load and consume configuration
 
+![](assets/conf-manager.png)
+
 Please ★ this repo if you found it useful ★ ★ ★
 
 ## Features
